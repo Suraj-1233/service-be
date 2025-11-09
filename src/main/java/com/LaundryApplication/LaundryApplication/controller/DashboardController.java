@@ -1,15 +1,14 @@
 package com.LaundryApplication.LaundryApplication.controller;
 
 import com.LaundryApplication.LaundryApplication.model.Order;
+import com.LaundryApplication.LaundryApplication.model.OrderStatus;
 import com.LaundryApplication.LaundryApplication.repository.OrderRepository;
 import com.LaundryApplication.LaundryApplication.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -28,20 +27,23 @@ public class DashboardController {
             return ResponseEntity.status(403).body("Access denied");
         }
 
-        long totalOrders = orderRepository.count();
-        long pending = orderRepository.countByStatusIgnoreCase("PENDING");
-        long completed = orderRepository.countByStatusIgnoreCase("COMPLETED");
+        Map<String, Object> stats = new LinkedHashMap<>();
 
-        // ✅ Calculate total revenue from completed orders
-        List<Order> completedOrders = orderRepository.findByStatusIgnoreCase("COMPLETED");
-        double totalRevenue = completedOrders.stream()
-                .mapToDouble(o -> o.getTotalAmount())  // 🔥 Corrected field name
+        // ✅ Count total orders
+        stats.put("totalOrders", orderRepository.count());
+
+        // ✅ Count per status dynamically (works for all enums)
+        Map<String, Long> statusCounts = new LinkedHashMap<>();
+        for (OrderStatus status : OrderStatus.values()) {
+            statusCounts.put(status.name(), orderRepository.countByStatus(status));
+        }
+        stats.put("statusCounts", statusCounts);
+
+        // ✅ Calculate total revenue from completed/delivered orders
+        List<Order> revenueOrders = orderRepository.findByStatus(OrderStatus.COMPLETED);
+        double totalRevenue = revenueOrders.stream()
+                .mapToDouble(Order::getTotalAmount)
                 .sum();
-
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalOrders", totalOrders);
-        stats.put("pending", pending);
-        stats.put("completed", completed);
         stats.put("revenue", totalRevenue);
 
         return ResponseEntity.ok(stats);

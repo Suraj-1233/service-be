@@ -1,14 +1,13 @@
 package com.LaundryApplication.LaundryApplication.controller;
 
+import com.LaundryApplication.LaundryApplication.exception.UnauthorizedException;
 import com.LaundryApplication.LaundryApplication.model.User;
-import com.LaundryApplication.LaundryApplication.repository.OrderRepository;
-import com.LaundryApplication.LaundryApplication.repository.UserRepository;
+import com.LaundryApplication.LaundryApplication.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,60 +15,33 @@ import java.util.Map;
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserRepository userRepository;
+    @Autowired private UserService userService;
 
-  @Autowired
-  private OrderRepository orderRepository;
-
-    // ✅ 1. Get all users (Admin only)
+    // ✅ 1️⃣ Get all users (Admin only)
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAllNonAdminUsers() {
-        List<User> users = userRepository.findAll()
-                .stream()
-                .filter(user -> !"admin".equalsIgnoreCase(user.getRole()))
-                .toList();
-
-        List<Map<String, Object>> result = users.stream().map(user -> {
-            long orderCount = orderRepository.findByUserId(user.getId()).size(); // ✅ count user's orders
-
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("id", user.getId());
-            userData.put("name", user.getName());
-            userData.put("email", user.getEmail());
-            userData.put("orderCount", orderCount); // ✅ number of orders by this user
-            userData.put("phoneNumber", user.getPhoneNumber()); // ✅ added phone number
-
-            return userData;
-        }).toList();
-
-        return ResponseEntity.ok(result);
+    public ResponseEntity<List<Map<String, Object>>> getAllUsers(Authentication auth) {
+        ensureAdmin(auth);
+        return ResponseEntity.ok(userService.getAllNonAdminUsers());
     }
 
-
-
-    // Get current logged-in user info
+    // ✅ 2️⃣ Get current user profile
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        String email = authentication.getName(); // extracted from JWT
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(user);
+    public ResponseEntity<User> getCurrentUser(Authentication auth) {
+        String email = auth.getName();
+        return ResponseEntity.ok(userService.getCurrentUser(email));
     }
 
+    // ✅ 3️⃣ Update logged-in user profile
     @PutMapping("/update")
-    public ResponseEntity<?> updateUser(@RequestBody User updatedUser, Authentication authentication) {
-        String email = authentication.getName(); // current logged-in user’s email
+    public ResponseEntity<User> updateUser(@RequestBody User updatedUser, Authentication auth) {
+        String email = auth.getName();
+        return ResponseEntity.ok(userService.updateUser(email, updatedUser));
+    }
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Update only editable fields
-        user.setName(updatedUser.getName());
-        user.setPhoneNumber(updatedUser.getPhoneNumber());
-
-        userRepository.save(user);
-
-        return ResponseEntity.ok(user);
+    // 🔒 Helper — restricts Admin-only access
+    private void ensureAdmin(Authentication auth) {
+        if (auth == null || auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ADMIN"))) {
+            throw new UnauthorizedException("Access denied: Admins only");
+        }
     }
 }

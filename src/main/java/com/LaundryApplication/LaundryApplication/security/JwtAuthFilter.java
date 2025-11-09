@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -29,26 +28,44 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+        try {
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
 
-            if (jwtUtil.validateToken(token)) {
-                String email = jwtUtil.getEmailFromToken(token);
-                String role = jwtUtil.getRoleFromToken(token);
+                // ✅ Validate token
+                if (jwtUtil.validateToken(token)) {
+                    String email = jwtUtil.getEmailFromToken(token);
+                    String role = jwtUtil.getRoleFromToken(token);
+                    String userId = jwtUtil.extractUserId(token);
 
-                // ✅ Ensure role is not null or empty
-                if (role == null || role.isEmpty()) {
-                    role = "USER"; // Default role if missing
+                    if (role == null || role.isEmpty()) {
+                        role = "USER"; // Default role
+                    }
+
+                    List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
+
+                    // ✅ Create Authentication object
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(email, null, authorities);
+
+                    // ✅ (Optional) Add userId to details for later use in controllers
+                    authentication.setDetails(userId);
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                    // Log authentication info
+                    System.out.println("✅ JWT Authenticated: " + email + " (role=" + role + ", userId=" + userId + ")");
+                } else {
+                    System.out.println("⚠️ Invalid JWT token detected");
                 }
-
-                List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(email, null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+        } catch (Exception ex) {
+            System.err.println("❌ JWT Filter error: " + ex.getMessage());
+            // Optional: clear context if token was invalid
+            SecurityContextHolder.clearContext();
         }
 
+        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 }

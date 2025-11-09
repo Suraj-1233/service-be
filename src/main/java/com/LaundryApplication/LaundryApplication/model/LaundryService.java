@@ -15,5 +15,6 @@ public class LaundryService {
     private String id;
     private String serviceName;   // e.g., Wash, Iron, Dry Clean
     private String description;   // e.g., “Gentle wash and dry”
+    private double basePrice;     // default price per item
     private boolean active = true; // for admin toggle
 }

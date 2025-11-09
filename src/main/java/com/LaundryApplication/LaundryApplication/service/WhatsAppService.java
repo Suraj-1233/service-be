@@ -44,7 +44,6 @@ public class WhatsAppService {
                         "Delivery Date: %s",
                 order.getId(),
                 order.getCustomerName(),
-                order.getItemsDescription(),
                 order.getTotalAmount(),
                 pickupDateStr,
                 deliveryDateStr
@@ -68,7 +67,6 @@ public class WhatsAppService {
                 "Order Cancelled!\n\nOrder ID: %s\nCustomer: %s\nPhone: %s\nItems: %s\nTotal: ₹%.2f\nLocation: %s, %s\nStatus: %s",
                 order.getId(),
                 order.getCustomerName(),
-                order.getItemsDescription(), // ✅ added missing argument
                 order.getTotalAmount(),
                 order.getStatus()
         );

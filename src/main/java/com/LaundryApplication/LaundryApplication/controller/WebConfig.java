@@ -14,7 +14,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins("http://172.20.10.2:5555","http://localhost:4200","https://service-fe-3nra.vercel.app") // Flutter web dev server
+                        .allowedOrigins("http://172.20.10.2:5555","http://localhost:4200","https://service-fe-3nra.vercel.app","http://172.20.10.2:5551") // Flutter web dev server
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("Authorization", "Content-Type", "Accept")
                         .allowCredentials(true)

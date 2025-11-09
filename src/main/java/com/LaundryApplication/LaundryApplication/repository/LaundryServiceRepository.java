@@ -1,4 +1,7 @@
 package com.LaundryApplication.LaundryApplication.repository;
 
-public class LaundryServiceRepository {
+import com.LaundryApplication.LaundryApplication.model.LaundryService;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+public interface LaundryServiceRepository extends MongoRepository<LaundryService, String> {
 }

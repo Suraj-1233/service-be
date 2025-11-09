@@ -1,14 +1,15 @@
 package com.LaundryApplication.LaundryApplication.controller;
 
+import com.LaundryApplication.LaundryApplication.exception.UnauthorizedException;
 import com.LaundryApplication.LaundryApplication.model.Item;
 import com.LaundryApplication.LaundryApplication.service.ItemService;
-import com.LaundryApplication.LaundryApplication.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/items")
@@ -17,62 +18,50 @@ public class ItemController {
     @Autowired
     private ItemService itemService;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    // Anyone can get items
+    // ✅ 1️⃣ Get all items (Public)
     @GetMapping
-    public List<Item> getAllItems() {
-        return itemService.getAllItems();
+    public ResponseEntity<List<Item>> getAllItems() {
+        return ResponseEntity.ok(itemService.getAllItems());
     }
 
-    // Only ADMIN can add items
+    // ✅ 2️⃣ Get item by ID (Public)
+    @GetMapping("/{id}")
+    public ResponseEntity<Item> getItemById(@PathVariable String id) {
+        return ResponseEntity.ok(itemService.getItemById(id));
+    }
+
+    // ✅ 3️⃣ Add new item (Admin only)
     @PostMapping
-    public ResponseEntity<?> addItem(@RequestHeader("Authorization") String token, @RequestBody Item item) {
-        if (!isAdmin(token)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
-        }
-        itemService.addItem(item);
-        return ResponseEntity.ok("Item added successfully");
+    public ResponseEntity<?> addItem(@RequestBody Item item, Authentication auth) {
+        ensureAdmin(auth);
+        Item saved = itemService.addItem(item);
+        return ResponseEntity.ok(Map.of("message", "Item added successfully", "data", saved));
     }
 
-    // ✅ Only ADMIN can delete items
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteItem(
-            @RequestHeader("Authorization") String token,
-            @PathVariable("id") String id) {  // 👈 Added explicit name
-
-        if (!isAdmin(token)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
-        }
-
-        itemService.deleteItem(id);
-        return ResponseEntity.ok("Item deleted successfully");
-    }
-
-    private boolean isAdmin(String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String role = jwtUtil.getRoleFromToken(token);
-            return role.equals("ADMIN");
-        }
-        return false;
-    }
-
-    // ✅ Only ADMIN can update items
+    // ✅ 4️⃣ Update item (Admin only)
     @PutMapping("/{id}")
     public ResponseEntity<?> updateItem(
-            @RequestHeader("Authorization") String authHeader,
-            @PathVariable("id") String id,  // 👈 Added explicit name
-            @RequestBody Item updatedItem) {
-
-        if (!isAdmin(authHeader)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
-        }
-
-        Item item = itemService.updateItem(id, updatedItem);
-        return ResponseEntity.ok(item);
+            @PathVariable String id,
+            @RequestBody Item updatedItem,
+            Authentication auth
+    ) {
+        ensureAdmin(auth);
+        Item updated = itemService.updateItem(id, updatedItem);
+        return ResponseEntity.ok(Map.of("message", "Item updated successfully", "data", updated));
     }
 
+    // ✅ 5️⃣ Delete item (Admin only)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteItem(@PathVariable String id, Authentication auth) {
+        ensureAdmin(auth);
+        itemService.deleteItem(id);
+        return ResponseEntity.ok(Map.of("message", "Item deleted successfully"));
+    }
 
+    // 🔒 Helper method to ensure ADMIN role
+    private void ensureAdmin(Authentication auth) {
+        if (auth == null || auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ADMIN"))) {
+            throw new UnauthorizedException("Access denied: Admins only");
+        }
+    }
 }

@@ -1,27 +1,31 @@
-name: Build and Push Docker Image
+name: Build, Push, and Deploy Laundry Backend
 
 on:
   push:
     branches:
-      - main  # Change if your main branch is named differently
+      - main  # Run only when you push to main branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1️⃣ - Checkout repo
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      # Step 2️⃣ - Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Step 3️⃣ - Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Step 4️⃣ - Build & push backend image
       - name: Build and push backend image
         uses: docker/build-push-action@v6
         with:
@@ -32,3 +36,19 @@ jobs:
           provenance: false
           build-args: |
             FIREBASE_KEY_BASE64=${{ secrets.FIREBASE_KEY_BASE64 }}
+
+      # Step 5️⃣ - SSH into EC2 and deploy new image
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "🚀 Starting deployment..."
+            cd ~/laundry-app
+            echo "🧹 Pulling latest Docker image..."
+            docker-compose pull
+            echo "🔁 Restarting services..."
+            docker-compose up -d
+            echo "✅ Deployment successful!"

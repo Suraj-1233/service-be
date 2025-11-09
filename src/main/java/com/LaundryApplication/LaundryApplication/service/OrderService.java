@@ -28,7 +28,6 @@ public class OrderService  {
     @Autowired private UserRepository userRepository;
     @Autowired private OrderRepository orderRepository;
     @Autowired private NotificationService notificationService;
-    @Autowired private WhatsAppService whatsAppService;
     @Autowired private AddressRepository addressRepository;
     @Autowired private PricingService pricingService;
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
@@ -80,7 +79,6 @@ public class OrderService  {
 
         // 6️⃣ Send Notifications (Optional)
         try {
-            whatsAppService.sendOrderNotification(savedOrder);
 //            notificationService.sendOrderPlacedNotification(user, savedOrder);
         } catch (Exception e) {
         }

@@ -22,8 +22,8 @@ public class Order {
     @JsonProperty("services")
     private List<OrderItem> items;
 
-    private LocalDate pickupDate;
-    private LocalDate deliveryDate;
+    private LocalDateTime pickupDate;
+    private LocalDateTime deliveryDate;
     private String customerName;
     private OrderStatus status;    // PLACED | IN_PROGRESS | READY | DELIVERED | CANCELLED
     private double totalAmount;

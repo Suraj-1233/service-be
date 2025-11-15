@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -160,7 +162,11 @@ public class OrderService  {
     public Order mapRequestToOrder(CreateOrderRequest req, String userId) {
         Order order = new Order();
         order.setUserId(userId);
-        order.setPickupDate(LocalDate.parse(req.getPickupDate()));
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+        LocalDate date = LocalDate.parse(req.getPickupDate());
+        LocalTime time = LocalTime.parse(req.getPickupTime(), timeFormatter);
+
+        order.setPickupDate(LocalDateTime.of(date, time));
         order.setNote(req.getNote());
         order.setStatus(OrderStatus.valueOf(req.getStatus().toUpperCase()));
         order.setTotalAmount(req.getTotalAmount());

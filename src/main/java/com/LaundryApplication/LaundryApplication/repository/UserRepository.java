@@ -20,4 +20,7 @@ public interface UserRepository extends MongoRepository<User, String> {
     // ✅ Find all Customers (role missing or not ADMIN)
     @Query("{ $or: [ { 'role': { $exists: false } }, { 'role': { $ne: 'ADMIN' } } ], 'fcmToken': { $ne: null } }")
     List<User> findAllActiveCustomers();
+
+    Optional<User> findByGoogleId(String googleId);
+
 }

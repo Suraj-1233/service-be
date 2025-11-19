@@ -16,6 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -160,13 +163,19 @@ public class OrderService  {
 
 
     public Order mapRequestToOrder(CreateOrderRequest req, String userId) {
+
         Order order = new Order();
         order.setUserId(userId);
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
-        LocalDate date = LocalDate.parse(req.getPickupDate());
-        LocalTime time = LocalTime.parse(req.getPickupTime(), timeFormatter);
 
+        // Parse Date
+        LocalDate date = LocalDate.parse(req.getPickupDate());
+
+        // Parse Time safely
+        LocalTime time = parseFlexibleTime(req.getPickupTime());
+
+        // Combine date + time
         order.setPickupDate(LocalDateTime.of(date, time));
+
         order.setNote(req.getNote());
         order.setStatus(OrderStatus.valueOf(req.getStatus().toUpperCase()));
         order.setTotalAmount(req.getTotalAmount());
@@ -176,6 +185,7 @@ public class OrderService  {
 
         for (ServiceRequest serviceReq : req.getServices()) {
             for (ItemRequest itemReq : serviceReq.getItems()) {
+
                 Order.OrderItem item = new Order.OrderItem();
                 item.setItemId(itemReq.getId());
                 item.setName(itemReq.getName());
@@ -187,12 +197,32 @@ public class OrderService  {
                 service.setPrice(itemReq.getPrice());
 
                 item.setServices(List.of(service));
+
                 items.add(item);
             }
         }
 
         order.setItems(items);
         return order;
+    }
+    private LocalTime parseFlexibleTime(String timeString) {
+
+        List<DateTimeFormatter> formatters = List.of(
+                DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH), // 1:10 AM
+                DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH),  // 7:05 PM
+                DateTimeFormatter.ofPattern("HH:mm"),                   // 01:10
+                DateTimeFormatter.ofPattern("H:mm"),                    // 7:10
+                DateTimeFormatter.ofPattern("HH:mm:ss"),                // 01:10:20
+                DateTimeFormatter.ofPattern("H:mm:ss")                  // 7:10:20
+        );
+
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                return LocalTime.parse(timeString, formatter);
+            } catch (Exception ignored) {}
+        }
+
+        throw new DateTimeParseException("Unsupported time format", timeString, 0);
     }
 
 }

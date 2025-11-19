@@ -1,5 +1,6 @@
 package com.LaundryApplication.LaundryApplication.controller;
 
+import com.LaundryApplication.LaundryApplication.dto.GoogleLoginRequest;
 import com.LaundryApplication.LaundryApplication.exception.BadRequestException;
 import com.LaundryApplication.LaundryApplication.exception.ForbiddenException;
 import com.LaundryApplication.LaundryApplication.exception.ResourceNotFoundException;
@@ -58,6 +59,16 @@ public class AuthController {
         String token = authService.login(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(new LoginResponse(token));
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody GoogleLoginRequest request) {
+        if (request.getIdToken() == null || request.getIdToken().isBlank()) {
+            throw new BadRequestException("idToken is required");
+        }
+
+        return ResponseEntity.ok(authService.loginWithGoogle(request.getIdToken()));
+    }
+
 
     // ✅ DTOs
     @Data

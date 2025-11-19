@@ -30,6 +30,9 @@ public class User {
     private List<String> addresses;
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    private String profilePicture;
+
 }
 
 

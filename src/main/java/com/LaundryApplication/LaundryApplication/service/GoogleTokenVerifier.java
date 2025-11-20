@@ -18,7 +18,7 @@ public class GoogleTokenVerifier {
                 new NetHttpTransport(),
                 new JacksonFactory()
         )
-                .setAudience(Collections.singletonList("21803912592-ru8bb4uuiegurb75q9mcakln1avvevn1.apps.googleusercontent.com"))
+                .setAudience(Collections.singletonList("355133834187-i5bgnaku9l1vgm0d6shl05m660smamko.apps.googleusercontent.com"))
                 .build();
     }
 

@@ -17,7 +17,7 @@ public class GoogleAuthService {
     @Autowired
     private UserRepository userRepository;
 
-    private static final String CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE";
+    private static final String CLIENT_ID = "355133834187-i5bgnaku9l1vgm0d6shl05m660smamko.apps.googleusercontent.com";
 
     public User verifyGoogleToken(String idTokenString) {
         try {

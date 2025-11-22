@@ -38,10 +38,11 @@ public class UserService {
     }
 
     // ✅ 2️⃣ Get current logged-in user
-    public User getCurrentUser(String email) {
+       public User getCurrentUser(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND"));
     }
+
 
     // ✅ 3️⃣ Update user profile (self)
     public User updateUser(String email, User updatedUser) {

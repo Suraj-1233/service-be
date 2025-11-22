@@ -1,9 +1,11 @@
 package com.LaundryApplication.LaundryApplication.controller;
 
+import com.LaundryApplication.LaundryApplication.exception.ResourceNotFoundException;
 import com.LaundryApplication.LaundryApplication.exception.UnauthorizedException;
 import com.LaundryApplication.LaundryApplication.model.User;
 import com.LaundryApplication.LaundryApplication.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -25,19 +27,11 @@ public class UserController {
     }
 
     // ✅ 2️⃣ Get current user profile
+    // ✅ 2️⃣ Get current user profile
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication auth) {
+    public ResponseEntity<User> getCurrentUser(Authentication auth) {
         String email = auth.getName();
-        try {
-            User user = userService.getCurrentUser(email);
-            return ResponseEntity.ok(user);
-        } catch (ResourceNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of(
-                            "success", false,
-                            "message", "USER_NOT_FOUND"
-                    ));
-        }
+        return ResponseEntity.ok(userService.getCurrentUser(email));
     }
 
 

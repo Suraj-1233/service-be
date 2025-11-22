@@ -11,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.LaundryApplication.LaundryApplication.repository.UserRepository;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,6 +21,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
+      @Autowired
+    private UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -37,6 +40,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     String email = jwtUtil.getEmailFromToken(token);
                     String role = jwtUtil.getRoleFromToken(token);
                     String userId = jwtUtil.extractUserId(token);
+
+                    // 🛑 CHECK USER EXISTS & ACTIVE
+                    var userOpt = userRepository.findByEmail(email);
+                    if (userOpt.isEmpty() || !userOpt.get().isActive()) {
+                        System.out.println("❌ USER_NOT_FOUND/Inactive");
+
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("""
+                            {"success":false,"message":"USER_NOT_FOUND"}
+                        """);
+                        return;
+                    }
 
                     if (role == null || role.isEmpty()) {
                         role = "USER"; // Default role
@@ -69,3 +85,4 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+

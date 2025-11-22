@@ -26,10 +26,20 @@ public class UserController {
 
     // ✅ 2️⃣ Get current user profile
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser(Authentication auth) {
+    public ResponseEntity<?> getCurrentUser(Authentication auth) {
         String email = auth.getName();
-        return ResponseEntity.ok(userService.getCurrentUser(email));
+        try {
+            User user = userService.getCurrentUser(email);
+            return ResponseEntity.ok(user);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "USER_NOT_FOUND"
+                    ));
+        }
     }
+
 
     // ✅ 3️⃣ Update logged-in user profile
     @PutMapping("/update")
